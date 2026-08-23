@@ -149,9 +149,14 @@
   }
   .contact-bar input:focus{border-bottom-color:var(--vino);}
 
-  .success-view{padding:60px 44px;text-align:center;}
-  .success-view h4{font-family:"Playfair Display",serif;font-size:26px;margin:0 0 12px;}
-  .success-view p{font-size:16px;line-height:1.6;color:#333;}
+  .success-view{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:60px 44px;
+  }
+  .success-view .emoji{font-size:56px;margin-bottom:20px;}
+  .success-view h4{font-family:"Playfair Display",serif;font-weight:700;font-size:32px;margin:0 0 16px;}
+  .success-view p{font-size:16.5px;line-height:1.65;color:#333;max-width:440px;}
+  .success-view .success-contact{margin-top:26px;font-size:14.5px;color:var(--vino);}
 
   .drawer-footer{
     display:flex;justify-content:space-between;align-items:center;
@@ -163,10 +168,23 @@
     background:var(--vino);color:var(--crema);padding:13px 28px;font-size:14px;cursor:pointer;
   }
 
+  .back-link{
+    display:none;background:none;border:none;color:var(--vino);font-size:13px;
+    cursor:pointer;padding:0 0 8px;text-decoration:underline;text-underline-offset:3px;
+  }
+
+  /* En celular el formulario no cabe como columna lateral: se abre a
+     pantalla completa, como si fuera otra página, con un link para volver. */
   @media (max-width:640px){
     .drawer-nav{display:none;}
-    .page.split .hero-pane{flex-basis:0%;padding:0;overflow:hidden;}
-    .page.split .drawer{flex-basis:100%;}
+    .back-link{display:inline-block;}
+    .drawer{
+      position:fixed;inset:0;flex-basis:auto;width:100%;
+      transform:translateX(100%);transition:transform .4s cubic-bezier(.22,.61,.36,1);
+      z-index:60;
+    }
+    .page.split .hero-pane{flex-basis:100%;}
+    .page.split .drawer{transform:translateX(0);flex-basis:auto;}
   }
 </style>
 </head>
@@ -200,6 +218,7 @@
   <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Brief de marca">
     <div class="drawer-head">
       <div>
+        <button class="back-link" id="backToStart">← Volver al inicio</button>
         <div class="label">Brief de marca</div>
         <h3>Contame de tu proyecto</h3>
       </div>
@@ -300,7 +319,7 @@
   ];
 
   // Pegar acá la URL de despliegue del Apps Script (Code.gs) una vez publicado como Web App.
-  const API_URL = "https://script.google.com/macros/s/AKfycbztq15EEVWazFiWPBAMezqrWF5WFAnwfmXEETx0Uk6IE94vmKiB5449T4LkGVlbcKkx/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbwB6qT-2eFNHzlGAS9T1IqX_w4jV2Tec7Xk_CjBmAV_7dKthsl9G9ZCowIKVJm0nIOK/exec";
 
   let current = 0;
   let maxReached = 0;
@@ -396,6 +415,8 @@
       .then(data => {
         if (data.status === "ok") {
           showSuccess();
+        } else if (data.status === "duplicate") {
+          showDuplicate(data.message);
         } else {
           alert(data.message || "Hubo un error guardando el brief. Probá de nuevo.");
           nextBtn.disabled = false;
@@ -409,15 +430,36 @@
       });
   }
 
+  function clearDrawerChrome_(){
+    document.querySelector(".time-note").style.display = "none";
+    document.querySelector(".progress-track").style.display = "none";
+    document.querySelector(".contact-bar").style.display = "none";
+    document.querySelector(".drawer-footer").style.display = "none";
+  }
+
   function showSuccess(){
+    clearDrawerChrome_();
+    document.querySelector(".drawer-head .label").textContent = "Brief recibido";
+    document.querySelector(".drawer-head h3").textContent = "¡Listo!";
     document.querySelector(".drawer-body").innerHTML = `
       <div class="success-view">
-        <h4>¡Listo, brief recibido!</h4>
-        <p>Gracias por completarlo. Te llega un correo de confirmación en un momento.<br>
-        En 4 a 7 días te contacto para agendar la videollamada.</p>
+        <div class="emoji">🎉</div>
+        <h4>¡Ya lo recibí!</h4>
+        <p>Gracias por completarlo. Pronto me pongo en contacto con vos para agendar la videollamada — revisá tu correo, ahí te dejé la confirmación.</p>
+        <p class="success-contact">¿Tenés dudas mientras tanto? Escribime por WhatsApp o respondé ese correo.</p>
       </div>`;
-    document.querySelector(".drawer-footer").style.display = "none";
-    document.querySelector(".contact-bar").style.display = "none";
+  }
+
+  function showDuplicate(message){
+    clearDrawerChrome_();
+    document.querySelector(".drawer-head .label").textContent = "Brief de marca";
+    document.querySelector(".drawer-head h3").textContent = "Ya lo tengo";
+    document.querySelector(".drawer-body").innerHTML = `
+      <div class="success-view">
+        <div class="emoji">📋</div>
+        <h4>Ya completaste tu brief</h4>
+        <p>${message || "Ya tengo tu información guardada. Si querés cambiar algo, escribime y lo vemos juntas."}</p>
+      </div>`;
   }
 
   const page = document.getElementById("page");
@@ -432,6 +474,7 @@
 
   document.getElementById("openBrief").addEventListener("click", openDrawer);
   document.getElementById("closeBrief").addEventListener("click", closeDrawer);
+  document.getElementById("backToStart").addEventListener("click", closeDrawer);
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
 
   renderNav();
