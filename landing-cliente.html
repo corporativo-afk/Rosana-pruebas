@@ -29,17 +29,26 @@
   .topnav .brand{font-family:"Playfair Display",serif;font-weight:700;font-size:20px;letter-spacing:.5px;}
   .topnav .role{font-size:13px;letter-spacing:2px;text-transform:uppercase;}
 
-  .hero{
-    min-height:100vh;display:flex;flex-direction:column;justify-content:center;
-    padding:120px 7vw 100px;background:var(--crema);
+  /* ---- Layout partido: hero a la izquierda, formulario a la derecha ---- */
+  .page{display:flex;height:100vh;overflow:hidden;}
+
+  .hero-pane{
+    flex:1 1 100%;min-width:0;overflow-y:auto;
+    display:flex;flex-direction:column;
+    transition:flex-basis .5s cubic-bezier(.22,.61,.36,1);
   }
-  .hero .eyebrow{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--vino);margin-bottom:28px;}
+
+  .hero{
+    flex:1;display:flex;flex-direction:column;justify-content:center;
+    padding:120px 7vw 60px;background:var(--crema);
+  }
   .hero h1{
     font-family:"Playfair Display",serif;font-weight:700;
     font-size:clamp(40px,7vw,88px);line-height:1.08;margin:0 0 32px;max-width:16ch;
+    transition:font-size .5s ease;
   }
   .hero h1 em{font-family:Agbalumo,cursive;font-style:italic;color:var(--vino);}
-  .hero p.bio{font-size:clamp(17px,1.8vw,21px);max-width:620px;line-height:1.6;color:#1a1a1a;margin:0 0 44px;}
+  .hero p.bio{font-size:clamp(17px,1.8vw,21px);max-width:620px;line-height:1.6;color:#1a1a1a;margin:0 0 44px;transition:font-size .5s ease;}
   .hero p.bio em{font-family:Agbalumo,cursive;font-style:italic;color:var(--vino);}
 
   .hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:28px;}
@@ -60,20 +69,26 @@
     font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
   }
 
-  /* ---- Drawer ---- */
-  .overlay{
-    position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;
-    transition:opacity .35s;z-index:50;
-  }
-  .overlay.open{opacity:1;pointer-events:auto;}
+  /* Cuando el formulario está abierto: el hero se contrae a una columna
+     angosta con el mismo texto en líneas más cortas, y el formulario pasa
+     a ocupar ~84% del ancho de la página. */
+  .page.split .hero-pane{flex-basis:16%;min-width:210px;}
+  .page.split .hero{padding:56px 22px;}
+  .page.split .hero h1{font-size:21px;max-width:none;margin-bottom:14px;}
+  .page.split .hero p.bio{font-size:13.5px;margin-bottom:18px;}
+  .page.split .hero-actions{flex-direction:column;align-items:flex-start;gap:10px;}
+  .page.split .cta-btn{display:none;}
+  .page.split .contact-link{font-size:13px;}
+  .page.split footer{padding:20px 22px;flex-direction:column;font-size:11px;}
 
+  /* ---- Formulario ---- */
   .drawer{
-    position:fixed;top:0;bottom:0;right:0;width:min(680px,92vw);
-    background:var(--crema);box-shadow:-20px 0 60px rgba(0,0,0,.2);
-    transform:translateX(100%);transition:transform .4s cubic-bezier(.22,.61,.36,1);
-    z-index:51;display:flex;flex-direction:column;
+    flex:0 0 0%;min-width:0;overflow:hidden;
+    background:var(--crema);border-left:0px solid rgba(103,19,24,.15);
+    transition:flex-basis .5s cubic-bezier(.22,.61,.36,1);
+    display:flex;flex-direction:column;
   }
-  .drawer.open{transform:translateX(0);}
+  .page.split .drawer{flex:0 0 84%;border-left-width:1px;}
 
   .drawer-head{
     display:flex;justify-content:space-between;align-items:flex-start;
@@ -101,6 +116,14 @@
   .drawer-nav .nav-item.active{border-left-color:var(--vino);background:rgba(103,19,24,.07);color:var(--vino);}
   .drawer-nav .nav-item .n{font-family:"Playfair Display",serif;font-size:13px;color:rgba(103,19,24,.6);}
   .drawer-nav .nav-item .t{font-size:14px;}
+  .drawer-nav .nav-item.locked{opacity:.32;cursor:not-allowed;}
+  .drawer-nav .nav-item.locked .n,
+  .drawer-nav .nav-item.locked .t{color:rgba(17,17,17,.5);}
+
+  .time-note{
+    padding:14px 40px;background:rgba(103,19,24,.06);color:var(--vino);
+    font-size:13.5px;line-height:1.5;border-bottom:1px solid rgba(103,19,24,.13);flex-shrink:0;
+  }
 
   .drawer-panel{flex:1;display:flex;flex-direction:column;min-width:0;}
   .drawer-panel .panel-scroll{flex:1;overflow-y:auto;padding:32px 40px 16px;}
@@ -142,6 +165,8 @@
 
   @media (max-width:640px){
     .drawer-nav{display:none;}
+    .page.split .hero-pane{flex-basis:0%;padding:0;overflow:hidden;}
+    .page.split .drawer{flex-basis:100%;}
   }
 </style>
 </head>
@@ -152,25 +177,25 @@
     <div class="role">Community Manager</div>
   </div>
 
-  <section class="hero">
-    <div class="eyebrow">Bienvenida a tu proceso</div>
-    <h1>¡Bienvenida! Empecemos por <em>tu marca</em>.</h1>
-    <p class="bio">
-      Soy Rosana Gómez, Community Manager especialista en marketing digital y <em>Meta Ads</em>.
-      Antes de armar tu estrategia necesito conocer tu marca a fondo — completá el brief y arrancamos.
-    </p>
-    <div class="hero-actions">
-      <button class="cta-btn" id="openBrief">Completar mi brief →</button>
-      <a class="contact-link" href="https://www.instagram.com/rogomez.digital/" target="_blank" rel="noopener">@rogomez.digital ↗</a>
+  <div class="page" id="page">
+    <div class="hero-pane" id="heroPane">
+      <section class="hero">
+        <h1>¡Bienvenida! Empecemos por <em>tu marca</em>.</h1>
+        <p class="bio">
+          Soy Rosana Gómez, Community Manager especialista en marketing digital y <em>Meta Ads</em>.
+          Antes de armar tu estrategia necesito conocer tu marca a fondo — completá el brief y arrancamos.
+        </p>
+        <div class="hero-actions">
+          <button class="cta-btn" id="openBrief">Completar mi brief →</button>
+          <a class="contact-link" href="https://www.instagram.com/rogomez.digital/" target="_blank" rel="noopener">@rogomez.digital ↗</a>
+        </div>
+      </section>
+
+      <footer>
+        <div>Rosana Gómez — Community Manager</div>
+        <div>© 2026</div>
+      </footer>
     </div>
-  </section>
-
-  <footer>
-    <div>Rosana Gómez — Community Manager</div>
-    <div>© 2026</div>
-  </footer>
-
-  <div class="overlay" id="overlay"></div>
 
   <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Brief de marca">
     <div class="drawer-head">
@@ -180,6 +205,8 @@
       </div>
       <button class="drawer-close" id="closeBrief" aria-label="Cerrar">×</button>
     </div>
+
+    <div class="time-note">⏱ Tomate entre 5 y 10 minutos (hasta 15 si querés ir bien a fondo). De esta información depende el resultado — contame todo con el mayor detalle posible.</div>
 
     <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
 
@@ -205,6 +232,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 
 <script>
@@ -272,9 +300,10 @@
   ];
 
   // Pegar acá la URL de despliegue del Apps Script (Code.gs) una vez publicado como Web App.
-  const API_URL = "";
+  const API_URL = "https://script.google.com/macros/s/AKfycbztq15EEVWazFiWPBAMezqrWF5WFAnwfmXEETx0Uk6IE94vmKiB5449T4LkGVlbcKkx/exec";
 
   let current = 0;
+  let maxReached = 0;
   const answers = SECTIONS.map(s => s.fields.map(() => ""));
 
   const nav = document.getElementById("drawerNav");
@@ -284,12 +313,16 @@
   const nextBtn = document.getElementById("nextStep");
 
   function renderNav(){
-    nav.innerHTML = SECTIONS.map((s,i) => `
-      <div class="nav-item ${i===current?'active':''}" data-i="${i}">
+    nav.innerHTML = SECTIONS.map((s,i) => {
+      const locked = i > maxReached;
+      const active = i === current;
+      return `
+      <div class="nav-item ${active?'active':''} ${locked?'locked':''}" data-i="${i}">
         <div class="n">${String(i+1).padStart(2,'0')}</div>
         <div class="t">${s.title}</div>
-      </div>`).join("");
-    nav.querySelectorAll(".nav-item").forEach(el => {
+      </div>`;
+    }).join("");
+    nav.querySelectorAll(".nav-item:not(.locked)").forEach(el => {
       el.addEventListener("click", () => goTo(parseInt(el.dataset.i,10)));
     });
   }
@@ -330,6 +363,7 @@
       submitBrief();
       return;
     }
+    maxReached = Math.max(maxReached, current + 1);
     goTo(current + 1);
   });
 
@@ -386,22 +420,18 @@
     document.querySelector(".contact-bar").style.display = "none";
   }
 
-  const drawer = document.getElementById("drawer");
-  const overlay = document.getElementById("overlay");
+  const page = document.getElementById("page");
 
   function openDrawer(){
-    drawer.classList.add("open");
-    overlay.classList.add("open");
+    page.classList.add("split");
     goTo(0);
   }
   function closeDrawer(){
-    drawer.classList.remove("open");
-    overlay.classList.remove("open");
+    page.classList.remove("split");
   }
 
   document.getElementById("openBrief").addEventListener("click", openDrawer);
   document.getElementById("closeBrief").addEventListener("click", closeDrawer);
-  overlay.addEventListener("click", closeDrawer);
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
 
   renderNav();
