@@ -132,22 +132,18 @@
 
   .field{margin-bottom:22px;}
   .field label{display:block;font-size:15px;margin-bottom:7px;color:var(--negro);}
-  .field textarea{
+  .field textarea,
+  .field input{
     width:100%;background:var(--crema);border:none;border-bottom:2px solid rgba(103,19,24,.2);
     padding:9px 4px;font-family:"Bree Serif",serif;font-size:15px;resize:vertical;outline:none;
   }
-  .field textarea:focus{border-bottom-color:var(--vino);}
+  .field textarea:focus,
+  .field input:focus{border-bottom-color:var(--vino);}
 
-  .contact-bar{
-    display:flex;gap:20px;padding:18px 40px;border-bottom:1px solid rgba(103,19,24,.13);
-    flex-shrink:0;flex-wrap:wrap;
+  .field-warning{
+    display:none;color:var(--vino);font-size:13.5px;padding:0 40px 12px;
   }
-  .contact-bar .field{margin:0;flex:1;min-width:180px;}
-  .contact-bar input{
-    width:100%;background:var(--crema);border:none;border-bottom:2px solid rgba(103,19,24,.2);
-    padding:8px 4px;font-family:"Bree Serif",serif;font-size:15px;outline:none;
-  }
-  .contact-bar input:focus{border-bottom-color:var(--vino);}
+  .field-warning.show{display:block;}
 
   .success-view{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -216,6 +212,8 @@
     </div>
 
   <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Brief de marca">
+    <div class="time-note">⏱ Tomate entre 5 y 10 minutos (hasta 15 si querés ir bien a fondo). De esta información depende el resultado — contame todo con el mayor detalle posible.</div>
+
     <div class="drawer-head">
       <div>
         <button class="back-link" id="backToStart">← Volver al inicio</button>
@@ -225,26 +223,14 @@
       <button class="drawer-close" id="closeBrief" aria-label="Cerrar">×</button>
     </div>
 
-    <div class="time-note">⏱ Tomate entre 5 y 10 minutos (hasta 15 si querés ir bien a fondo). De esta información depende el resultado — contame todo con el mayor detalle posible.</div>
-
     <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-
-    <div class="contact-bar">
-      <div class="field">
-        <label for="contactName">Tu nombre</label>
-        <input type="text" id="contactName" placeholder="Nombre y apellido">
-      </div>
-      <div class="field">
-        <label for="contactEmail">Tu correo</label>
-        <input type="email" id="contactEmail" placeholder="correo@ejemplo.com">
-      </div>
-    </div>
 
     <div class="drawer-body">
       <nav class="drawer-nav" id="drawerNav"></nav>
 
       <div class="drawer-panel">
         <div class="panel-scroll" id="panelScroll"></div>
+        <div class="field-warning" id="fieldWarning">Completá todos los campos antes de continuar.</div>
         <div class="drawer-footer">
           <button class="step-btn" id="prevStep">← Anterior</button>
           <button class="step-btn primary" id="nextStep">Siguiente →</button>
@@ -323,6 +309,8 @@
 
   let current = 0;
   let maxReached = 0;
+  let contactName = "";
+  let contactEmail = "";
   const answers = SECTIONS.map(s => s.fields.map(() => ""));
 
   const nav = document.getElementById("drawerNav");
@@ -330,6 +318,7 @@
   const progressFill = document.getElementById("progressFill");
   const prevBtn = document.getElementById("prevStep");
   const nextBtn = document.getElementById("nextStep");
+  const fieldWarning = document.getElementById("fieldWarning");
 
   function renderNav(){
     nav.innerHTML = SECTIONS.map((s,i) => {
@@ -348,9 +337,20 @@
 
   function renderPanel(){
     const s = SECTIONS[current];
+    const contactFieldsHtml = current === 0 ? `
+      <div class="field">
+        <label for="contactNameInput">¿Cómo te llamás?</label>
+        <input type="text" id="contactNameInput" placeholder="Nombre y apellido" value="${contactName}">
+      </div>
+      <div class="field">
+        <label for="contactEmailInput">¿Cuál es tu correo electrónico?</label>
+        <input type="email" id="contactEmailInput" placeholder="correo@ejemplo.com" value="${contactEmail}">
+      </div>` : "";
+
     panel.innerHTML = `
       <h4>${s.title}</h4>
       <div class="step-count">Sección ${String(current+1).padStart(2,'0')} de 06</div>
+      ${contactFieldsHtml}
       ${s.fields.map((q,i) => `
         <div class="field">
           <label for="f-${current}-${i}">${q}</label>
@@ -360,6 +360,11 @@
     panel.querySelectorAll("textarea").forEach((ta,i) => {
       ta.addEventListener("input", () => { answers[current][i] = ta.value; });
     });
+    if (current === 0) {
+      document.getElementById("contactNameInput").addEventListener("input", (e) => { contactName = e.target.value; });
+      document.getElementById("contactEmailInput").addEventListener("input", (e) => { contactEmail = e.target.value; });
+    }
+    fieldWarning.classList.remove("show");
     panel.scrollTop = 0;
   }
 
@@ -376,8 +381,22 @@
     renderFooter();
   }
 
+  function sectionComplete(i){
+    const questionsOk = SECTIONS[i].fields.every((_, idx) => answers[i][idx].trim() !== "");
+    if (i === 0) {
+      return questionsOk && contactName.trim() !== "" && contactEmail.trim() !== "";
+    }
+    return questionsOk;
+  }
+
   prevBtn.addEventListener("click", () => goTo(current - 1));
   nextBtn.addEventListener("click", () => {
+    if (!sectionComplete(current)) {
+      fieldWarning.classList.add("show");
+      return;
+    }
+    fieldWarning.classList.remove("show");
+
     if (current === SECTIONS.length - 1) {
       submitBrief();
       return;
@@ -387,13 +406,9 @@
   });
 
   function submitBrief(){
-    const nombre = document.getElementById("contactName").value.trim();
-    const email = document.getElementById("contactEmail").value.trim();
+    const nombre = contactName.trim();
+    const email = contactEmail.trim();
 
-    if (!nombre || !email) {
-      alert("Faltan tu nombre y tu correo — están arriba, encima de las secciones.");
-      return;
-    }
     if (!API_URL) {
       alert("Falta conectar la URL del backend (API_URL) todavía — el diseño y el formulario ya están completos.");
       return;
@@ -433,8 +448,8 @@
   function clearDrawerChrome_(){
     document.querySelector(".time-note").style.display = "none";
     document.querySelector(".progress-track").style.display = "none";
-    document.querySelector(".contact-bar").style.display = "none";
     document.querySelector(".drawer-footer").style.display = "none";
+    fieldWarning.classList.remove("show");
   }
 
   function showSuccess(){
